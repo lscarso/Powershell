@@ -27,7 +27,7 @@ Get-Content c:\names.txt | Get-Inventory.
 
 .NOTES 
 Run this to create eventlog and register source:
-New-EventLog -LogName "Scripts" -Source AD_PasswordNotify
+New-EventLog -LogName "Scripts" -Source Send-PasswordNotify
 #>
 
 Param(
@@ -48,7 +48,7 @@ $smtpserver = "smtp.yourdomain.com"
 # eventlog name where write events
 $logName = "Script"
 # log file name
-$logFileName = ".\AD_PasswordNotify.log"
+$logFileName = ".\Send-PasswordNotify.log"
 
 # function to get Password-Duration
 function GetPasswordDuration{
@@ -98,7 +98,7 @@ Try {
             
             #write eventlog
             if ($eventLog){
-                Write-EventLog -LogName $logName -Source AD_PasswordNotify -EventId 3001 -EntryType Information -Message "Mail sent to user $user.SamAccountName with this address: $user.mail" 
+                Write-EventLog -LogName $logName -Source Send-PasswordNotify -EventId 3001 -EntryType Information -Message "Mail sent to user $user.SamAccountName with this address: $user.mail" 
             }
             # write logfile
             if ($logFile){
@@ -110,7 +110,7 @@ Try {
 }
 catch [Exception]{
     if ($eventLog){
-        Write-EventLog -LogName $logName -Source AD_PasswordNotify -EventId 1001 -EntryType Error -Message "Error: $_.Exception.Message"
+        Write-EventLog -LogName $logName -Source Send-PasswordNotify -EventId 1001 -EntryType Error -Message "Error: $_.Exception.Message"
     }
     if ($logFile){
         $logline = "$($logdate): Error: $_.Exception.Message"
