@@ -1,0 +1,10 @@
+<font face="arial" size="2">Hello,
+<br/><br/>
+the password of your user account in the Active Directory will expire in less than 7 days.
+<br/><br/>
+Please remember to change it in time to prevent inaccessibility of your account.
+<br/>
+If you are out of office, to change your password, please go to https://owa.mydomain.com, log in and click the settings button, then click Change Password.
+<br/><br/><br/>
+Regards,
+<br/>IT Group</font>
