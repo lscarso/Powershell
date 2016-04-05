@@ -46,7 +46,7 @@ $emailsubject = "Password Expiry Notice"
 $emailfrom = "helpdesk@yourdomain.com"
 $smtpserver = "smtp.yourdomain.com"
 # eventlog name where write events
-$logName = "Script"
+$logName = "Scripts"
 # log file name
 $logFileName = ".\Send-PasswordNotify.log"
 
@@ -76,7 +76,12 @@ Try {
     # Get Password-Duration
     $PasswordDuration = GetPasswordDuration
 
-    # Check for logPath file
+    # Write eventLog
+    if ($eventLog){
+        Write-EventLog -LogName $logName -Source AD_PW_ChangeNotification -EventId 3002 -EntryType Information -Message "Script Started" 
+    }
+    
+    # Write logFile
     If ($logFile){
         $logdateexact = get-date -format "yyy-MM-dd (HH:mm)"
         $logline = "$($logdateexact): Script Started"
