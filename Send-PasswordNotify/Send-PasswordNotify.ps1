@@ -103,7 +103,7 @@ Try {
             
             #write eventlog
             if ($eventLog){
-                Write-EventLog -LogName $logName -Source Send-PasswordNotify -EventId 3001 -EntryType Information -Message "Mail sent to user $user.SamAccountName with this address: $user.mail" 
+                Write-EventLog -LogName $logName -Source Send-PasswordNotify -EventId 3001 -EntryType Information -Message "Mail sent to user $($user.SamAccountName) with this address: $($user.mail)" 
             }
             # write logfile
             if ($logFile){
