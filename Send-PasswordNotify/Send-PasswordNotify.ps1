@@ -19,11 +19,11 @@ if $True write to eventlog. Default is $True. Check .NOTES for more info
 
 .EXAMPLE 
 Read username and email address from group "MyUsers" and send password expiration notification. 
-AD_PW_ChangeNotification.ps1 - notificationGroup "MyUsers"
+Send-PasswordNotify.ps1 -notificationGroup "MyUsers"
 
 .EXAMPLE 
-Read computer names from a file (one name per line) and retrieve their inventory information 
-Get-Content c:\names.txt | Get-Inventory.
+Read username and email address from group "MyUsers" and send password expiration notification with mailbox-IT.txt body, creating logfile Send-PasswordNotify.log and disabling eventlog usage.
+Send-PasswordNotify.ps1 -notificationGroup "MyUsers" -emailBodyFile "mailbox-IT.txt" -logFile $True -eventLog $False
 
 .NOTES 
 Run this to create eventlog and register source:
