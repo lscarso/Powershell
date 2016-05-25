@@ -22,30 +22,40 @@ $expath = "C:\Data\MyReport.csv"
 #########################################
 
 $results = @()
-$files=Get-ChildItem "$rpath\*.txt" | % {$_.fullname}
+if (Test-Path $rpath){
+    $files=Get-ChildItem "$rpath\*.txt" | % {$_.fullname}
 
-foreach ($file in $files){
-    write-host $file
-    $data = get-content $file
-    $fileattribute = get-item $file
+    foreach ($file in $files){
+        write-host $file
+        $data = get-content $file
+        $fileattribute = get-item $file
 
-    $props = @{
-        date=$fileattribute.LastWriteTime.ToString('MM-dd-yyyy')
-        computername=$fileattribute.name.TrimEnd(".txt")
-        fileline=$null
+        $props = @{
+            date=$fileattribute.LastWriteTime.ToString('MM-dd-yyyy')
+            computername=$fileattribute.name.TrimEnd(".txt")
+            fileline=$null
+        }
+
+        foreach ($line in $data){
+            if ($line -like "Domain*" -or $line -like "------*" -or $line -eq ""){
+            }
+            else {
+                $strtemp = ""
+                $linedata = $line.Split(" ",[StringSplitOptions]'RemoveEmptyEntries')
+                $strtemp = $linedata -join "\"
+                $props.fileline = $strtemp
+                $results += new-object PsObject -Property $props
+            }
+        }
+    }
+    If (Test-Path $expath){
+        $results | export-csv -path $("$expath\LocalAdministratorsReport.csv")
+    }
+    Else {
+        Write-Warning "Path not found: $expath"
     }
 
-    foreach ($line in $data){
-        if ($line -like "Domain*" -or $line -like "------*" -or $line -eq ""){
-        }
-        else {
-            $strtemp = ""
-            $linedata = $line.Split(" ",[StringSplitOptions]'RemoveEmptyEntries')
-            $strtemp = $linedata -join "\"
-            $props.fileline = $strtemp
-            $results += new-object PsObject -Property $props
-        }
-    }
 }
-
-$results | export-csv -path $expath
+Else {
+    Write-Warning "Path not found: $rpath"
+}
