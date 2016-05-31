@@ -8,13 +8,12 @@ Graphical APP for telephoneNumber and MobilePhone attibutes management.
 .NOTES
 Edit $ADSearchBase for filtering users
 Edit $logFileName for save modified record log
-Author: Luca Scarsini
 
 #>
 
 # Script configuration
-$ADSearchBase = "OU=100_Personal,OU=800_OM,OU=100_Users,OU=KION Objects,DC=d400,DC=mh,DC=grp"
-$logFileName = "\\DEFRKIM0196.d400.mh.grp\Sys_Data1$\IT8000_Software\02_ReceptionScript\Log\PhoneEditor.log"
+$ADSearchBase = "OU=My_Users,DC=My_Domain,DC=local"
+$logFileName = "C:\Temp\PhoneEditor.log"
 
 Add-Type -AssemblyName presentationframework
 #Add-Type -AssemblyName System.DirectoryServices.AccountManagement
@@ -26,7 +25,7 @@ Import-Module ActiveDirectory
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
-    Title="STILL Italy - Phone Editor" Width="550" Height="500" 
+    Title="Phone Editor" Width="550" Height="500" 
     FontSize="13" WindowStartupLocation="CenterScreen"
     >  
   
