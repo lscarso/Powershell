@@ -7,205 +7,143 @@ Graphical APP for telephoneNumber and MobilePhone attibutes management.
 
 .NOTES
 Edit $ADSearchBase for filtering users
+Edit $logFileName for save modified record log
+Author: Luca Scarsini
 
 #>
- 
+
 # Script configuration
-$ADSearchBase = "OU=My_Users,DC=My_Domain,DC=local"
- 
-#----------------------------------------------
-# Generated Form Function
-#----------------------------------------------
-function GenerateForm {
- 
-    #----------------------------------------------
-    #region Import Assemblies
-    #----------------------------------------------
-    [void][reflection.assembly]::Load("System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-    [void][reflection.assembly]::Load("System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
-    [void][reflection.assembly]::Load("mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-    [void][reflection.assembly]::Load("System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-    #endregion
-    
-    Import-Module ActiveDirectory 
-    [System.Windows.Forms.Application]::EnableVisualStyles()
-    $form1 = New-Object System.Windows.Forms.Form
-    $btnSave = New-Object System.Windows.Forms.Button
-    $btnExport = New-Object System.Windows.Forms.Button
-    
-    $label3 = New-Object System.Windows.Forms.Label
-    $label2 = New-Object System.Windows.Forms.Label
-    $label1 = New-Object System.Windows.Forms.Label
+$ADSearchBase = "OU=100_Personal,OU=800_OM,OU=100_Users,OU=KION Objects,DC=d400,DC=mh,DC=grp"
+$logFileName = "\\DEFRKIM0196.d400.mh.grp\Sys_Data1$\IT8000_Software\02_ReceptionScript\Log\PhoneEditor.log"
 
-    $MobilePhone = New-Object System.Windows.Forms.TextBox
-    $telephoneNumber = New-Object System.Windows.Forms.TextBox
+Add-Type -AssemblyName presentationframework
+#Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+Import-Module ActiveDirectory
 
-    $listbox1 = New-Object System.Windows.Forms.ListBox
-    
-    $InitialFormWindowState = New-Object System.Windows.Forms.FormWindowState
- 
-    $FormEvent_Load={
-            $results = Get-ADUser -Filter * -SearchScope Subtree -SearchBase $ADSearchBase -Properties DisplayName, telephoneNumber, MobilePhone
-             
-            foreach ($result in $results) {
-                $listbox1.Items.Add($result.DisplayName)
-            }
-    }
-     
-    $handler_listbox1_SelectedIndexChanged={
-            $entry = Get-ADUser -filter {DisplayName -eq $listbox1.Text} -Properties DisplayName, telephoneNumber, MobilePhone
-      
-            $telephoneNumber.Text = $entry.telephoneNumber
-            $MobilePhone.Text = $entry.MobilePhone
-    }
-    
-    $handler_btnSave_Click={
-            # Save changes in AD
-            $SetTelephoneNumber = $telephoneNumber.Text
-            $SetMobilePhone = $MobilePhone.Text
 
-            if ($SetTelephoneNumber.Length -lt 1){
-                $SetTelephoneNumber = $null
-            }
-            if ($SetMobilePhone.Length -lt 1){
-                $SetMobilePhone = $null
-            }
-            
-            $entry = Get-ADUser -filter {DisplayName -eq $listbox1.Text} | Set-ADUser -OfficePhone $SetTelephoneNumber -MobilePhone $SetMobilePhone
-            if( -not $?){
-                $msg = $Error[0].Exception.Message
-                [System.Windows.Forms.MessageBox]::Show("Error: $msg", "Updating Status")
-            }
+[xml]$xaml = @"
+<Window 
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    Title="STILL Italy - Phone Editor" Width="550" Height="500" 
+    FontSize="13" WindowStartupLocation="CenterScreen"
+    >  
+  
+  <Grid
+    FocusManager.FocusedElement="{Binding ElementName=txtSearch}">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="200" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <Grid Grid.Row="0" Margin="5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>      
+        <TextBlock Grid.Column="0" Margin="5" Text="Search for:" VerticalAlignment="Center"/>
+        <TextBox Grid.Column="1" Margin="5" x:Name="txtSearch" />
+    </Grid>
+    <ListBox x:Name="listbox" Grid.Row="1" Margin="5" DisplayMemberPath="DisplayName"> 
+        <ListBox.ItemContainerStyle>
+            <Style TargetType="{x:Type ListBoxItem}">
+            </Style>
+        </ListBox.ItemContainerStyle>
+    </ListBox>
+    <Grid Grid.Row="0" Grid.Column="1" Margin="5">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Row="0" Grid.Column="0" Margin="10,5,5,5" Text = "Last operation Status:" />
+        <TextBox Grid.Row="0" Grid.Column="1" Margin="5,5,10,5" x:Name="txtStatus" IsReadOnly="True" HorizontalContentAlignment="Right" Focusable="False" /> 
+
+    </Grid>
+    <Grid Grid.Row="1" Grid.Column="1">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />            
+        </Grid.RowDefinitions>
+        <Separator Grid.Row="0" Margin="5" VerticalAlignment="Top" />  
+            <Grid Grid.Row="1" Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>        
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>      
+                <TextBlock Grid.Row="0" Grid.Column="0" Margin="10" Text = "Telephone Number:" />
+                <TextBox Grid.Row="0" Grid.Column="1" Margin="10" x:Name="txtTelephone" Text = "{Binding ElementName=listbox,Path=SelectedItem.telephoneNumber}" />
+                <TextBlock Grid.Row="1" Grid.Column="0" Margin="10" Text = "Mobile Number:" />
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="10" x:Name="txtMobile" Text = "{Binding ElementName=listbox,Path=SelectedItem.MobilePhone}"/>
+                <Button Grid.Row="2" Grid.Column="1" Margin="10" x:Name="saveButton" Content="Save" />
+            </Grid>
+    </Grid>
+  </Grid>
+</Window>
+"@
+
+
+$reader=(New-Object System.Xml.XmlNodeReader $xaml)
+$Window=[Windows.Markup.XamlReader]::Load( $reader )
+
+#Connect to Controls
+$textbox1 = $Window.FindName('txtSearch')
+$listbox = $Window.FindName('listbox')
+$telephoneBox = $Window.FindName('txtTelephone')
+$mobileBox = $Window.FindName('txtMobile')
+$saveButton = $Window.FindName('saveButton')
+$txtStatus = $Window.FindName('txtStatus')
+
+$Window.Add_Loaded({
+    #Have to have something initially in the collection
+    $Global:observableCollection = New-Object System.Collections.ObjectModel.ObservableCollection[System.Object]
+    $listbox.ItemsSource = $observableCollection
+    $observableCollection.Clear()
+    Get-ADUser -Filter * -SearchScope Subtree -SearchBase $ADSearchBase -Properties DisplayName, telephoneNumber, MobilePhone | Sort-Object DisplayName | Select-Object DisplayName, telephoneNumber, MobilePhone | ForEach {
+        $observableCollection.Add($_)
     }
-    
-    $handle_btnExport_Click={
-        # Export Telephone Number CSV
-        $objShell = new-object -com shell.application
-        $objFolder = $objShell.NameSpace("Home")
-        $namedfolder = $objShell.BrowseForFolder(0,"Select the folder where you what to export the list:",0,5)
-        Get-ADGroupMember O-008000-OM_Users | where-object {$_.DistinguishedName -like "*$ADSearchBase"} | Get-ADUser -Properties DisplayName, telephoneNumber, Mobile, l | Where-Object {$_.telephoneNumber -ne $null -or $_.Mobile -ne $null} | Sort-Object l | Select-Object @{n="Nome";e={$_.DisplayName}}, @{n="Telefono Fisso";e={$_.telephoneNumber}}, @{n="Cellulare";e={$_.Mobile}}, @{n="Sede";e={$_.l}} | Export-Csv -Delimiter ";" -Path "$($namedfolder.self.path)\ElencoTelefonico.csv" -NoTypeInformation | out-null
+})
+
+#Events
+$textbox1.Add_TextChanged({
+    $filterText = $textbox1.Text + "*"
+    $observableCollection = @($observableCollection | Where-Object {$_.DisplayName -like $filterText})
+    $listbox.itemsSource = $observableCollection 
+    #[System.Windows.Data.CollectionViewSource]::GetDefaultView( $Listbox.ItemsSource ).Refresh()
+}) 
+$saveButton.Add_Click({
+    $SetTelephoneNumber = $telephoneBox.Text
+    $SetMobilePhone = $mobileBox.Text
+    $SelectedUser = $listbox.SelectedItem.DisplayName
+    $idOperator = [Environment]::UserName
+    $logdate = get-date -format yyy-MM-dd
+        if ($SetTelephoneNumber.Length -lt 1){
+            $SetTelephoneNumber = $null
+        }
+        if ($SetMobilePhone.Length -lt 1){
+            $SetMobilePhone = $null
+        }
+        $logline = $logdate + ";" + $SelectedUser + ";" + $SetTelephoneNumber + ";" + $SetMobilePhone + ";" + $idOperator
+        Get-ADUser -filter {DisplayName -eq $SelectedUser} | Set-ADUser -OfficePhone $SetTelephoneNumber -MobilePhone $SetMobilePhone
         if( -not $?){
             $msg = $Error[0].Exception.Message
-            [System.Windows.Forms.MessageBox]::Show("Error: $msg", "Exporting Status")
-        }Else{
-            [System.Windows.Forms.MessageBox]::Show("File created on $($namedfolder.self.path)", "Exporting Status")
+            [windows.forms.messagebox]::Show("Error: $msg", "Updating Status")
         }
-    }
-     
-    $Form_StateCorrection_Load={
-            #Correct the initial state of the form to prevent the .Net maximized form issue
-            $form1.WindowState = $InitialFormWindowState
-    }
-     
-    #----------------------------------------------
-    #region Generated Form Code
-    #----------------------------------------------
-    #
-    # form1
-    #
-    $form1.Controls.Add($btnSave)
-    $form1.Controls.Add($btnExport)
-    $form1.Controls.Add($label3)
-    $form1.Controls.Add($label2)
-    $form1.Controls.Add($label1)
-    $form1.Controls.Add($MobilePhone)
-    $form1.Controls.Add($telephoneNumber)
-    $form1.Controls.Add($listbox1)
-    $form1.Text = "AD Phones Attribute Editor v1.0"
-    $form1.Name = "form1"
-    $form1.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $form1.ClientSize = New-Object System.Drawing.Size(606,465)
-    $form1.add_Load($FormEvent_Load)
-    #
-    # btnSave
-    #
-    $btnSave.TabIndex = 3
-    $btnSave.Name = "btnSave"
-    $btnSave.Size = New-Object System.Drawing.Size(120,23)
-    $btnSave.UseVisualStyleBackColor = $True
-    $btnSave.Text = "Save changes"
-    $btnSave.Location = New-Object System.Drawing.Point(474,100)
-    $btnSave.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $btnSave.add_Click($handler_btnSave_Click)
-    #
-    # btnExport
-    #
-    $btnExport.TabIndex = 4
-    $btnExport.Name = "btnExport"
-    $btnExport.Size = New-Object System.Drawing.Size(120,23)
-    $btnExport.UseVisualStyleBackColor = $True
-    $btnExport.Text = "Export CSV"
-    $btnExport.Location = New-Object System.Drawing.Point(474,430)
-    $btnExport.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $btnExport.add_Click($handle_btnExport_Click)
-    #
-    # custom2
-    #
-    $MobilePhone.Size = New-Object System.Drawing.Size(300,20)
-    $MobilePhone.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $MobilePhone.Name = "custom2"
-    $MobilePhone.Location = New-Object System.Drawing.Point(294,59)
-    $MobilePhone.TabIndex = 2
-    #
-    # custom1
-    #
-    $telephoneNumber.Size = New-Object System.Drawing.Size(300,20)
-    $telephoneNumber.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $telephoneNumber.Name = "custom1"
-    $telephoneNumber.Location = New-Object System.Drawing.Point(294,33)
-    $telephoneNumber.TabIndex = 1
-    #
-    # label Mobile Phone
-    #
-    $label3.TabIndex = 18
-    $label3.Size = New-Object System.Drawing.Size(115,19)
-    $label3.Text = "Mobile Phone"
-    $label3.Location = New-Object System.Drawing.Point(173,63)
-    $label3.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $label3.Name = "label3"
-    #
-    # label Office Phone
-    #
-    $label2.TabIndex = 2
-    $label2.Size = New-Object System.Drawing.Size(100,19)
-    $label2.Text = "Office Phone"
-    $label2.Location = New-Object System.Drawing.Point(173,36)
-    $label2.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $label2.Name = "label2"
-    #
-    # listbox User List
-    #
-    $listbox1.FormattingEnabled = $True
-    $listbox1.Size = New-Object System.Drawing.Size(155,420)
-    $listbox1.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $listbox1.Name = "listbox1"
-    $listbox1.Location = New-Object System.Drawing.Point(12,33)
-    $listbox1.Sorted = $True
-    $listbox1.TabIndex = 0
-    $listbox1.add_SelectedIndexChanged($handler_listbox1_SelectedIndexChanged)
-    #
-    # label Users List
-    #
-    $label1.TabIndex = 1
-    $label1.Size = New-Object System.Drawing.Size(174,23)
-    $label1.Text = "Please select a user:"
-    $label1.Location = New-Object System.Drawing.Point(12,9)
-    $label1.DataBindings.DefaultDataSourceUpdateMode = [System.Windows.Forms.DataSourceUpdateMode]::OnValidation 
-    $label1.Name = "label1"
-    #endregion Generated Form Code
- 
-    #----------------------------------------------
- 
-    #Save the initial state of the form
-    $InitialFormWindowState = $form1.WindowState
-    #Init the OnLoad event to correct the initial state of the form
-    $form1.add_Load($Form_StateCorrection_Load)
-    #Show the Form
-    return $form1.ShowDialog()
- 
-} #End Function
- 
+        Else {
+            $txtStatus.Text = "Saved $SelectedUser"
+            $logline | out-file $logFileName -Append
+        }
+})
 
 
-#Create the form
-GenerateForm | Out-Null
+$Window.ShowDialog() | Out-Null
