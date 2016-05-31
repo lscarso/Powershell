@@ -7,7 +7,6 @@ Graphical APP for telephoneNumber and MobilePhone attibutes management.
 
 .NOTES
 Edit $ADSearchBase for filtering users
-Author: Luca Scarsini
 
 #>
  
