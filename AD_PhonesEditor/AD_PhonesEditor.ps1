@@ -17,7 +17,7 @@ $logFileName = "C:\Temp\PhoneEditor.log"
 
 Add-Type -AssemblyName presentationframework
 #Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-Import-Module ActiveDirectory
+#Import-Module ActiveDirectory
 
 
 [xml]$xaml = @"
@@ -108,7 +108,19 @@ $Window.Add_Loaded({
     $Global:observableCollection = New-Object System.Collections.ObjectModel.ObservableCollection[System.Object]
     $listbox.ItemsSource = $observableCollection
     $observableCollection.Clear()
-    Get-ADUser -Filter * -SearchScope Subtree -SearchBase $ADSearchBase -Properties DisplayName, telephoneNumber, MobilePhone | Sort-Object DisplayName | Select-Object DisplayName, telephoneNumber, MobilePhone | ForEach {
+
+
+    $objDomain = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$ADSearchBase")
+    $objSearcher = New-Object System.DirectoryServices.DirectorySearcher
+    $objSearcher.SearchRoot = $objDomain
+    $objSearcher.PageSize = 1000
+    $strFilter = "(&(objectCategory=person)(objectClass=user))"
+    $objSearcher.Filter = $strFilter
+        
+    $colProplist = @("displayName", "telephoneNumber", "Mobile", "distinguishedName")
+    foreach ($i in $colPropList){$objSearcher.PropertiesToLoad.Add($i)}
+
+    $objSearcher.FindAll() | Select @{e={$_.Properties.item("displayname")};n='DisplayName'},@{e={$_.Properties.item("telephoneNumber")};n='telephoneNumber'},@{e={$_.Properties.item("Mobile")};n='MobilePhone'},@{e={$_.Properties.item("distinguishedName")};n='distinguishedName'} | Sort-Object DisplayName | ForEach {
         $observableCollection.Add($_)
     }
 })
@@ -123,23 +135,30 @@ $textbox1.Add_TextChanged({
 $saveButton.Add_Click({
     $SetTelephoneNumber = $telephoneBox.Text
     $SetMobilePhone = $mobileBox.Text
-    $SelectedUser = $listbox.SelectedItem.DisplayName
+    $SelectedUser = $listbox.SelectedItem.distinguishedName
     $idOperator = [Environment]::UserName
     $logdate = get-date -format yyy-MM-dd
+        
+        $objUser = New-Object DirectoryServices.DirectoryEntry("LDAP://$SelectedUser")
         if ($SetTelephoneNumber.Length -lt 1){
             $SetTelephoneNumber = $null
-        }
+            $objUser.PutEx(1, "telephoneNumber", 0)
+        } Else {$objUser.Put("telephoneNumber", $SetTelephoneNumber)}
         if ($SetMobilePhone.Length -lt 1){
             $SetMobilePhone = $null
-        }
+            $objUser.PutEx(1, "mobile", 0)
+        } Else {$objUser.Put("mobile", $SetMobilePhone)}
+        
+        $objUser.SetInfo()
+
         $logline = $logdate + ";" + $SelectedUser + ";" + $SetTelephoneNumber + ";" + $SetMobilePhone + ";" + $idOperator
-        Get-ADUser -filter {DisplayName -eq $SelectedUser} | Set-ADUser -OfficePhone $SetTelephoneNumber -MobilePhone $SetMobilePhone
+        
         if( -not $?){
             $msg = $Error[0].Exception.Message
             [windows.forms.messagebox]::Show("Error: $msg", "Updating Status")
         }
         Else {
-            $txtStatus.Text = "Saved $SelectedUser"
+            $txtStatus.Text = "Saved $($listbox.SelectedItem.DisplayName)"
             $logline | out-file $logFileName -Append
         }
 })
