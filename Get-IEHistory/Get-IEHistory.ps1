@@ -1,4 +1,11 @@
 function get-iehistory {            
+<# 
+.SYNOPSIS 
+Get Internet Explorer History
+
+.DESCRIPTION 
+Get the IE History 
+#>
   [CmdletBinding()]            
   param ()            
             
