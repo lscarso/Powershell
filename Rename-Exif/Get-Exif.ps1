@@ -1,3 +1,17 @@
+<# 
+.SYNOPSIS 
+Get EXIF attributes from image
+
+.DESCRIPTION 
+Display EXIF attributes of an image 
+
+.PARAMETER $Path
+Path of image
+
+.EXAMPLE
+Get-Exif.ps1 C:\MyPictures\Image01.jpg
+#>
+
 #$strtime = (makestring $foo.GetPropertyItem(36867))
 
 #$DataScatto = ([datetime]::ParseExact($strtime.substring(0,10).replace(":","/"),"yyyy/MM/dd",$null)).ToShortDateString()
