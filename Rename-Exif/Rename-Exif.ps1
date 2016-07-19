@@ -1,3 +1,17 @@
+<# 
+.SYNOPSIS 
+Rename images on selected path
+
+.DESCRIPTION 
+Rename all the images found on selected path with this schema: [timestamp]-[filename][counter]
+
+.PARAMETER $Path 
+Folder where rename the images
+
+.EXAMPLE 
+Rename-Exif.ps1 C:\MyImage
+#>
+
 function ReadAttribute {
     $DWGAttr = $Null
     Try{$DWGAttr = $photo.GetPropertyItem($args[0])}
