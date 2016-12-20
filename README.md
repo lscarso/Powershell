@@ -11,3 +11,4 @@ Import-Csv C:\Data\Working\users.csv -Delimiter ";" | foreach {Get-ADUser -LDAPF
 ```powershell
 Import-Csv C:\data\Working\UtentiTest.csv -Delimiter ";" | % {Write-Host (Get-Culture).TextInfo.ToTitleCase(($_."Company").ToLower())}
 ```
+Note that words that are entirely in upper-case are not converted.
