@@ -28,7 +28,7 @@ Import-Csv "C:\Data\Working\printers.csv" -delimiter ";" -Encoding UTF8 | .\New-
 
 .NOTES 
 Preinstall driver on Server:
-Add-WindowsDriver –Driver "c:\test\drivers"
+pnpitul -i -a "c:\test\drivers\printerdrive.inf"
 Add-PrinterDriver -ComputerName PRINTSRV -Name "RICOH PCL6 UniversalDriver V4.12"
 
 CSV must use ";" as delimiter
