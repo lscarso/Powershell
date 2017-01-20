@@ -17,8 +17,8 @@ Location attribute of print queue.
 .PARAMETER PrinterComment
 Comment attribute of print queue.
 
-.PARAMETER PrinterDrive
-Drive to use on Printer queue. Driver should be already installed on printserver.
+.PARAMETER PrinterDriver
+Driver to use on Printer queue. Driver should be already installed on printserver.
 
 .PARAMETER ComputerName
 IP address/HostName of printeserver where install print queue.
