@@ -27,7 +27,7 @@ Add-Type -AssemblyName presentationframework
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
-    Title="STILL Italy - Phone Editor" Width="550" Height="500" 
+    Title="Phone Editor" Width="550" Height="500" 
     FontSize="13" WindowStartupLocation="CenterScreen"
     >  
   
