@@ -8,14 +8,16 @@ Graphical APP for telephoneNumber and MobilePhone attibutes management.
 .NOTES
 Edit $ADSearchBase for filtering users
 Edit $logFileName for save modified record log
+Author: Luca Scarsini
 
 #>
 
 # Script configuration
-$ADSearchBase = "OU=My_Users,DC=My_Domain,DC=local"
+$ADSearchBase = "OU=My_Users,DC=My_Domain,DC=local" 
 $logFileName = "C:\Temp\PhoneEditor.log"
 
 Add-Type -AssemblyName presentationframework
+#Add-Type -AssemblyName System.Windows.Forms
 #Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 #Import-Module ActiveDirectory
 
@@ -25,7 +27,7 @@ Add-Type -AssemblyName presentationframework
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
-    Title="Phone Editor" Width="550" Height="500" 
+    Title="STILL Italy - Phone Editor" Width="550" Height="500" 
     FontSize="13" WindowStartupLocation="CenterScreen"
     >  
   
@@ -67,7 +69,7 @@ Add-Type -AssemblyName presentationframework
     <Grid Grid.Row="1" Grid.Column="1">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />            
+            <RowDefinition Height="*" />            
         </Grid.RowDefinitions>
         <Separator Grid.Row="0" Margin="5" VerticalAlignment="Top" />  
             <Grid Grid.Row="1" Margin="5">
@@ -75,16 +77,18 @@ Add-Type -AssemblyName presentationframework
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>        
+                    <RowDefinition Height="*" />
+                 </Grid.RowDefinitions>        
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>      
                 <TextBlock Grid.Row="0" Grid.Column="0" Margin="10" Text = "Telephone Number:" />
-                <TextBox Grid.Row="0" Grid.Column="1" Margin="10" x:Name="txtTelephone" Text = "{Binding ElementName=listbox,Path=SelectedItem.telephoneNumber}" />
+                <TextBox Grid.Row="0" Grid.Column="1" Margin="10" x:Name="txtTelephone" Text = "{Binding ElementName=listbox,Path=SelectedItem.telephoneNumber,Mode=OneWay}" />
                 <TextBlock Grid.Row="1" Grid.Column="0" Margin="10" Text = "Mobile Number:" />
-                <TextBox Grid.Row="1" Grid.Column="1" Margin="10" x:Name="txtMobile" Text = "{Binding ElementName=listbox,Path=SelectedItem.MobilePhone}"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="10" x:Name="txtMobile" Text = "{Binding ElementName=listbox,Path=SelectedItem.MobilePhone,Mode=OneWay}"/>
                 <Button Grid.Row="2" Grid.Column="1" Margin="10" x:Name="saveButton" Content="Save" />
+                <Button Grid.Row="3" Grid.Column="1" Margin="10" x:Name="exportMobileButton" Content="Export Mobile Phones" VerticalAlignment="Bottom" />
             </Grid>
     </Grid>
   </Grid>
@@ -102,6 +106,7 @@ $telephoneBox = $Window.FindName('txtTelephone')
 $mobileBox = $Window.FindName('txtMobile')
 $saveButton = $Window.FindName('saveButton')
 $txtStatus = $Window.FindName('txtStatus')
+$exportMobileButton = $Window.FindName('exportMobileButton')
 
 $Window.Add_Loaded({
     #Have to have something initially in the collection
@@ -133,35 +138,88 @@ $textbox1.Add_TextChanged({
     #[System.Windows.Data.CollectionViewSource]::GetDefaultView( $Listbox.ItemsSource ).Refresh()
 }) 
 $saveButton.Add_Click({
-    $SetTelephoneNumber = $telephoneBox.Text
-    $SetMobilePhone = $mobileBox.Text
-    $SelectedUser = $listbox.SelectedItem.distinguishedName
-    $idOperator = [Environment]::UserName
-    $logdate = get-date -format yyy-MM-dd
-        
-        $objUser = New-Object DirectoryServices.DirectoryEntry("LDAP://$SelectedUser")
-        if ($SetTelephoneNumber.Length -lt 1){
-            $SetTelephoneNumber = $null
-            $objUser.PutEx(1, "telephoneNumber", 0)
-        } Else {$objUser.Put("telephoneNumber", $SetTelephoneNumber)}
-        if ($SetMobilePhone.Length -lt 1){
-            $SetMobilePhone = $null
-            $objUser.PutEx(1, "mobile", 0)
-        } Else {$objUser.Put("mobile", $SetMobilePhone)}
-        
-        $objUser.SetInfo()
-
-        $logline = $logdate + ";" + $SelectedUser + ";" + $SetTelephoneNumber + ";" + $SetMobilePhone + ";" + $idOperator
-        
-        if( -not $?){
-            $msg = $Error[0].Exception.Message
-            [windows.forms.messagebox]::Show("Error: $msg", "Updating Status")
-        }
-        Else {
+    try {
+        $SetTelephoneNumber = $telephoneBox.Text
+        $SetMobilePhone = $mobileBox.Text
+        $SelectedUser = $listbox.SelectedItem.distinguishedName
+        $idOperator = [Environment]::UserName
+        $logdate = get-date -format yyy-MM-dd
+            
+            $objUser = New-Object DirectoryServices.DirectoryEntry("LDAP://$SelectedUser")
+            if ($SetTelephoneNumber.Length -lt 1){
+                $SetTelephoneNumber = $null
+                $objUser.PutEx(1, "telephoneNumber", 0)
+            } Else {
+                if ($SetTelephoneNumber.StartsWith("+")){
+                    # Number on correct form
+                }
+                Else {
+                    $SetTelephoneNumber = '+39' + $SetTelephoneNumber
+                }
+            $objUser.Put("telephoneNumber", $SetTelephoneNumber)
+            }
+            if ($SetMobilePhone.Length -lt 1){
+                $SetMobilePhone = $null
+                $objUser.PutEx(1, "mobile", 0)
+            } Else {
+                if ($SetMobilePhone.StartsWith("+")){
+                    # Number on correct form
+                }
+                Else {
+                    $SetMobilePhone = '+39' + $SetMobilePhone
+                }
+                $objUser.Put("mobile", $SetMobilePhone)
+            }
+            
+            $objUser.SetInfo()
             $txtStatus.Text = "Saved $($listbox.SelectedItem.DisplayName)"
-            $logline | out-file $logFileName -Append
+    }
+    catch [System.SystemException] {
+            $msg = $Error[0].Exception.Message
+            [System.Windows.MessageBox]::Show($msg, 'Upating Status', 'OK', 'Error')
+            $txtStatus.Text = "ERROR on $($listbox.SelectedItem.DisplayName)"
+    }
+    finally{
+        $objUser = New-Object DirectoryServices.DirectoryEntry("LDAP://$SelectedUser")
+        $tmpObject = $observableCollection[$observableCollection.IndexOf(($listbox.SelectedItem))]
+        $tmpObject.telephoneNumber = [string]$objUser.telephoneNumber
+        $tmpObject.mobilePhone = [string]$objUser.Mobile
+        $index = $observableCollection.IndexOf(($listbox.SelectedItem))
+        $observableCollection.RemoveAt($index)
+        $observableCollection.Insert($index, $tmpObject)
+        $listbox.SelectedItem = $listbox.Items.GetItemAt($index)
+
+        #$observableCollection[$observableCollection.IndexOf(($listbox.SelectedItem))].telephoneNumber = [string]$objUser.telephoneNumber
+        #$observableCollection[$observableCollection.IndexOf(($listbox.SelectedItem))].mobilePhone = [string]$objUser.Mobile
+        
+        $logline = $logdate + ";" + $SelectedUser + ";" + $SetTelephoneNumber + ";" + $SetMobilePhone + ";" + $idOperator
+        $logline | out-file $logFileName -Append
+    }
+    
+})
+
+$exportMobileButton.Add_Click({
+    try {
+        $folderPicker = New-Object Microsoft.Win32.SaveFileDialog
+        $folderPicker.Title = "Export CSV"
+        $folderPicker.FileName = "ExportedMobile"
+        $folderPicker.DefaultExt = ".csv" 
+        $folderPicker.Filter = "CSV Documents (.csv)|*.csv"
+        $folderPicker.InitialDirectory = [Environment]::GetFolderPath('Desktop')
+        if($folderPicker.ShowDialog() -eq $true)
+        {
+            $exportPathFile = $folderPicker.FileName
+            if ($exportPathFile -ne $null){
+                $observableCollection | Where-Object {$_.MobilePhone -ne $null} | Select -Property 'DisplayName', 'MobilePhone'  | Export-Csv -Path ($exportPathFile) -NoTypeInformation -Delimiter ';'
+            }
         }
+    }
+    Catch [System.SystemException] {
+        $msg = $Error[0].Exception.Message
+        [System.Windows.MessageBox]::Show($msg, 'Exporting Status', 'OK', 'Error')
+    }
 })
 
 
-$Window.ShowDialog() | Out-Null
+#$Window.ShowDialog() | Out-Null
+$null = $window.Dispatcher.InvokeAsync{$window.ShowDialog()}.Wait()
