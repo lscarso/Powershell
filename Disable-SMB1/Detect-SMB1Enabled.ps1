@@ -1,3 +1,14 @@
+<# 
+
+.SYNOPSIS 
+Check the status of SMB1
+
+.DESCRIPTION 
+Return "TRUE" if SMB1 is enabled, "FALSE" if SMB1 is disabled
+
+.NOTES
+
+#>
 
     [string]$OperatingSystemVersion = (Get-WmiObject -Class Win32_OperatingSystem).Version
 
