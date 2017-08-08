@@ -1,4 +1,16 @@
-﻿Try {
+<# 
+.SYNOPSIS 
+Disable SMB1
+
+.DESCRIPTION 
+Disable SMB1 for Vista to Windows Server 2016
+
+.NOTES
+Need admin rights
+
+#>
+
+Try {
     [string]$OperatingSystemVersion = (Get-WmiObject -Class Win32_OperatingSystem).Version    
 
     switch -Regex ($OperatingSystemVersion) {
